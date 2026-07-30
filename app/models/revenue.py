@@ -2,7 +2,7 @@
 Revenue recognition models
 """
 
-from sqlalchemy import Column, String, Integer, Float, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -47,7 +47,7 @@ class RevenueRecord(Base):
     is_fully_recognized = Column(Boolean, default=False)
     
     # Metadata
-    metadata = Column(String, nullable=True)  # JSON string
+    extra_metadata = Column(String, nullable=True)  # JSON string
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

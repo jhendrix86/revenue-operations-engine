@@ -62,7 +62,7 @@ async def get_failed_payments(
         
     except Exception as e:
         logger.error(f"Failed to get failed payments: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/retry/{payment_id}")
@@ -119,7 +119,7 @@ async def escalate_dunning(
         
     except Exception as e:
         logger.error(f"Failed to escalate dunning: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/stats")
@@ -157,4 +157,4 @@ async def get_dunning_stats(
         
     except Exception as e:
         logger.error(f"Failed to get dunning stats: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))

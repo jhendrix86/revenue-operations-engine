@@ -102,7 +102,7 @@ async def send_invoice(
         
     except Exception as e:
         logger.error(f"Failed to send invoice: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{invoice_id}")
@@ -133,7 +133,7 @@ async def get_invoice(
         
     except Exception as e:
         logger.error(f"Failed to get invoice: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/customer/{customer_id}")
@@ -163,7 +163,7 @@ async def get_customer_invoices(
         
     except Exception as e:
         logger.error(f"Failed to get customer invoices: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{invoice_id}/mark-paid")
@@ -190,4 +190,4 @@ async def mark_invoice_paid(
         
     except Exception as e:
         logger.error(f"Failed to mark invoice as paid: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))

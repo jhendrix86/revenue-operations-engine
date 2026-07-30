@@ -42,7 +42,7 @@ class Customer(Base):
     is_active = Column(Boolean, default=True)
     
     # Metadata
-    metadata = Column(String, nullable=True)  # JSON string
+    extra_metadata = Column(String, nullable=True)  # JSON string
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

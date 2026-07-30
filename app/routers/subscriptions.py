@@ -126,7 +126,7 @@ async def upgrade_subscription(
         
     except Exception as e:
         logger.error(f"Failed to upgrade subscription: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{subscription_id}/downgrade")
@@ -153,7 +153,7 @@ async def downgrade_subscription(
         
     except Exception as e:
         logger.error(f"Failed to downgrade subscription: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{subscription_id}")
@@ -180,7 +180,7 @@ async def get_subscription(
         
     except Exception as e:
         logger.error(f"Failed to get subscription: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/customer/{customer_id}")
@@ -207,4 +207,4 @@ async def get_customer_subscriptions(
         
     except Exception as e:
         logger.error(f"Failed to get customer subscriptions: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))

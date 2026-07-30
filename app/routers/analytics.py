@@ -86,7 +86,7 @@ async def get_mrr(
         
     except Exception as e:
         logger.error(f"Failed to get MRR: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/churn")
@@ -121,7 +121,7 @@ async def get_churn_metrics(
         
     except Exception as e:
         logger.error(f"Failed to get churn metrics: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/forecast")
@@ -161,7 +161,7 @@ async def get_revenue_forecast(
         
     except Exception as e:
         logger.error(f"Failed to get revenue forecast: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/customers")
@@ -205,4 +205,4 @@ async def get_customer_analytics(
         
     except Exception as e:
         logger.error(f"Failed to get customer analytics: {e}")
-        raise HTTPException(status_code=500, detail(str(e))
+        raise HTTPException(status_code=500, detail=str(e))

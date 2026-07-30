@@ -83,7 +83,7 @@ class Subscription(Base):
     paypal_subscription_id = Column(String, unique=True, nullable=True)
     
     # Metadata
-    metadata = Column(String, nullable=True)  # JSON string
+    extra_metadata = Column(String, nullable=True)  # JSON string
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

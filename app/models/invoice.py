@@ -58,12 +58,12 @@ class Invoice(Base):
     notes = Column(String(1000), nullable=True)
     
     # Metadata
-    metadata = Column(String, nullable=True)  # JSON string
-    
+    extra_metadata = Column(String, nullable=True)  # JSON string
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relationships
     customer = relationship("Customer", back_populates="invoices")
     subscription = relationship("Subscription", back_populates="invoices")
@@ -92,12 +92,12 @@ class InvoiceItem(Base):
     tax_rate = Column(Float, nullable=False, default=0.0)
     
     # Metadata
-    metadata = Column(String, nullable=True)  # JSON string
-    
+    extra_metadata = Column(String, nullable=True)  # JSON string
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relationships
     invoice = relationship("Invoice", back_populates="items")
     
