@@ -49,10 +49,18 @@ class Settings(BaseSettings):
     global_state_manager_url: str = os.getenv("GLOBAL_STATE_MANAGER_URL", "http://localhost:8035")
     governance_engine_url: str = os.getenv("GOVERNANCE_ENGINE_URL", "http://localhost:8033")
     knowledge_graph_url: str = os.getenv("KNOWLEDGE_GRAPH_URL", "http://localhost:8034")
-    
+
+    # baselayer income_engine (real billing/subscriptions/payments logic -
+    # this engine calls it over HTTP with a service-account login rather
+    # than re-implementing billing logic against Stripe/PayPal directly)
+    baselayer_url: str = os.getenv("BASELAYER_URL", "http://localhost:8000")
+    baselayer_service_email: str = os.getenv("BASELAYER_SERVICE_EMAIL", "")
+    baselayer_service_password: str = os.getenv("BASELAYER_SERVICE_PASSWORD", "")
+
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # tolerate env vars owned by other libs (e.g. unkey-auth's UNKEY_*)
 
 
 settings = Settings()

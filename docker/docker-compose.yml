@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  revenue-operations-engine:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: revenue-operations-engine
+    ports:
+      - "8036:8036"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/revenue
+      - REDIS_URL=redis://redis:6379
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      - PAYPAL_MODE=${PAYPAL_MODE:-sandbox}
+      - TAX_API_KEY=${TAX_API_KEY}
+      - DEFAULT_CURRENCY=${DEFAULT_CURRENCY:-USD}
+      - INVOICE_DAYS_UNTIL_DUE=${INVOICE_DAYS_UNTIL_DUE:-30}
+      - INVOICE_PREFIX=${INVOICE_PREFIX:-INV-}
+      - DUNNING_MAX_ATTEMPTS=${DUNNING_MAX_ATTEMPTS:-3}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - FROM_EMAIL=${FROM_EMAIL:-billing@company.com}
+      - BASELAYER_URL=${BASELAYER_URL:-http://baselayer:8000}
+      - BASELAYER_SERVICE_EMAIL=${BASELAYER_SERVICE_EMAIL}
+      - BASELAYER_SERVICE_PASSWORD=${BASELAYER_SERVICE_PASSWORD}
+      - UNKEY_ROOT_KEY=${UNKEY_ROOT_KEY}
+      - UNKEY_API_ID=${UNKEY_API_ID}
+      - UNKEY_BASE_URL=${UNKEY_BASE_URL:-https://api.unkey.com/v2}
+      - DEBUG=${DEBUG:-false}
+      - GLOBAL_STATE_MANAGER_URL=http://global-state-manager:8035
+      - GOVERNANCE_ENGINE_URL=http://governance-engine:8033
+      - KNOWLEDGE_GRAPH_URL=http://kg-service:8034
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - revenue-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: revenue-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=revenue
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - revenue-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: revenue-redis
+    networks:
+      - revenue-network
+    restart: unless-stopped
+
+networks:
+  revenue-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

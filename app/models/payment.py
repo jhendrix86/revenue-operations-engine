@@ -61,7 +61,7 @@ class Payment(Base):
         return f"<Payment {self.id} - {self.status} - {self.amount} {self.currency}>"
 
 
-class PaymentMethod(Base):
+class CustomerPaymentMethod(Base):
     """Customer payment method model"""
     __tablename__ = "payment_methods"
     
@@ -91,4 +91,4 @@ class PaymentMethod(Base):
     customer = relationship("Customer", back_populates="payment_methods")
     
     def __repr__(self):
-        return f"<PaymentMethod {self.id} - {self.type}>"
+        return f"<CustomerPaymentMethod {self.id} - {self.type}>"

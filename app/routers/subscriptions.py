@@ -1,16 +1,21 @@
 """
 Subscription router
+
+Calls baselayer's real income_engine subscription manager rather than
+Stripe/PayPal directly or a local mock - baselayer is the system of record
+here, so these endpoints are a thin, honest proxy: real success data or a
+clear failure reason (baselayer unreachable/unconfigured, or a real
+validation error from baselayer itself), never a fabricated response.
+"local plan_id" is passed straight through as baselayer's revenue stream id.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-from datetime import datetime, timedelta
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from loguru import logger
 
-from app.database import get_db
-from app.models.subscription import Subscription, SubscriptionStatus
+from app.services.baselayer_client import BaselayerClient
 
 router = APIRouter()
 
@@ -20,6 +25,7 @@ class CreateSubscriptionRequest(BaseModel):
     customer_id: str
     plan_id: str
     payment_method_id: str
+    billing_cycle: str = "monthly"
     trial_days: Optional[int] = 0
     metadata: Optional[dict] = None
 
@@ -31,180 +37,75 @@ class UpdateSubscriptionRequest(BaseModel):
     metadata: Optional[dict] = None
 
 
+def _result_or_error(result, not_found_detail: Optional[str] = None):
+    if result.success:
+        return result.data
+    status_code = 404 if not_found_detail and "not found" in (result.error or "").lower() else 400
+    raise HTTPException(status_code=status_code, detail=result.error)
+
+
 @router.post("/create")
-async def create_subscription(
-    request: CreateSubscriptionRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """Create a subscription"""
-    try:
-        logger.info(f"Creating subscription for customer {request.customer_id}")
-        
-        # Calculate dates
-        now = datetime.utcnow()
-        current_period_end = now + timedelta(days=30)
-        
-        if request.trial_days > 0:
-            trial_end = now + timedelta(days=request.trial_days)
-            status = SubscriptionStatus.TRIALING
-        else:
-            trial_end = None
-            status = SubscriptionStatus.ACTIVE
-        
-        # In production, this would integrate with Stripe/PayPal
-        # For now, return a mock response
-        subscription = {
-            "id": "sub_mock_123",
-            "customer_id": request.customer_id,
-            "plan_id": request.plan_id,
-            "status": status.value,
-            "current_period_start": now.isoformat(),
-            "current_period_end": current_period_end.isoformat(),
-            "trial_start": now.isoformat() if request.trial_days > 0 else None,
-            "trial_end": trial_end.isoformat() if trial_end else None,
-            "created_at": now.isoformat()
-        }
-        
-        logger.info(f"Subscription created: {subscription['id']}")
-        return subscription
-        
-    except Exception as e:
-        logger.error(f"Failed to create subscription: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def create_subscription(request: CreateSubscriptionRequest):
+    """Create a subscription via baselayer"""
+    logger.info(f"Creating subscription for customer {request.customer_id}, plan {request.plan_id}")
+
+    client = BaselayerClient()
+    result = await client.create_subscription(
+        customer_id=request.customer_id,
+        plan_id=request.plan_id,
+        payment_method=request.payment_method_id,
+        billing_cycle=request.billing_cycle,
+        trial_days=request.trial_days or 0,
+        metadata=request.metadata,
+    )
+    return _result_or_error(result)
 
 
-@router.post("/{subscription_id}/cancel")
+@router.post("/{customer_id}/{plan_id}/cancel")
 async def cancel_subscription(
-    subscription_id: str,
-    cancel_at_period_end: bool = True,
+    customer_id: str,
+    plan_id: str,
     reason: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
 ):
-    """Cancel a subscription"""
-    try:
-        logger.info(f"Cancelling subscription {subscription_id}")
-        
-        # In production, this would cancel with Stripe/PayPal
-        # For now, return a mock response
-        subscription = {
-            "id": subscription_id,
-            "status": "cancelled" if not cancel_at_period_end else "active",
-            "cancel_at_period_end": cancel_at_period_end,
-            "cancelled_at": datetime.utcnow().isoformat() if not cancel_at_period_end else None,
-            "cancellation_reason": reason
-        }
-        
-        logger.info(f"Subscription cancelled: {subscription_id}")
-        return subscription
-        
-    except Exception as e:
-        logger.error(f"Failed to cancel subscription: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """Cancel a subscription via baselayer"""
+    logger.info(f"Cancelling subscription for customer {customer_id}, plan {plan_id}")
+
+    client = BaselayerClient()
+    result = await client.cancel_subscription(
+        customer_id=customer_id,
+        plan_id=plan_id,
+        reason=reason or "Customer request",
+    )
+    return _result_or_error(result)
 
 
-@router.post("/{subscription_id}/upgrade")
-async def upgrade_subscription(
-    subscription_id: str,
+@router.put("/{customer_id}/{plan_id}")
+async def change_subscription_plan(
+    customer_id: str,
     plan_id: str,
-    db: AsyncSession = Depends(get_db)
+    new_plan_id: str,
 ):
-    """Upgrade subscription plan"""
-    try:
-        logger.info(f"Upgrading subscription {subscription_id} to plan {plan_id}")
-        
-        # In production, this would upgrade with Stripe/PayPal
-        # For now, return a mock response
-        subscription = {
-            "id": subscription_id,
-            "plan_id": plan_id,
-            "status": "active",
-            "updated_at": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Subscription upgraded: {subscription_id}")
-        return subscription
-        
-    except Exception as e:
-        logger.error(f"Failed to upgrade subscription: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """Upgrade or downgrade a subscription's plan via baselayer (proration handled by baselayer)"""
+    logger.info(f"Changing subscription plan for customer {customer_id}: {plan_id} -> {new_plan_id}")
+
+    client = BaselayerClient()
+    result = await client.update_subscription_plan(
+        customer_id=customer_id, plan_id=plan_id, new_plan_id=new_plan_id,
+    )
+    return _result_or_error(result)
 
 
-@router.post("/{subscription_id}/downgrade")
-async def downgrade_subscription(
-    subscription_id: str,
-    plan_id: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Downgrade subscription plan"""
-    try:
-        logger.info(f"Downgrading subscription {subscription_id} to plan {plan_id}")
-        
-        # In production, this would downgrade with Stripe/PayPal
-        # For now, return a mock response
-        subscription = {
-            "id": subscription_id,
-            "plan_id": plan_id,
-            "status": "active",
-            "updated_at": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Subscription downgraded: {subscription_id}")
-        return subscription
-        
-    except Exception as e:
-        logger.error(f"Failed to downgrade subscription: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/{subscription_id}")
-async def get_subscription(
-    subscription_id: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Get subscription details"""
-    try:
-        logger.info(f"Getting subscription details for {subscription_id}")
-        
-        # In production, this would query from database
-        # For now, return a mock response
-        subscription = {
-            "id": subscription_id,
-            "customer_id": "cust_123",
-            "plan_id": "standard",
-            "status": "active",
-            "current_period_start": datetime.utcnow().isoformat(),
-            "current_period_end": (datetime.utcnow() + timedelta(days=30)).isoformat()
-        }
-        
-        return subscription
-        
-    except Exception as e:
-        logger.error(f"Failed to get subscription: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@router.get("/{customer_id}/{plan_id}")
+async def get_subscription(customer_id: str, plan_id: str):
+    """Get subscription details from baselayer"""
+    client = BaselayerClient()
+    result = await client.get_subscription(customer_id, plan_id)
+    return _result_or_error(result, not_found_detail="Subscription not found")
 
 
 @router.get("/customer/{customer_id}")
-async def get_customer_subscriptions(
-    customer_id: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Get all subscriptions for a customer"""
-    try:
-        logger.info(f"Getting subscriptions for customer {customer_id}")
-        
-        # In production, this would query from database
-        # For now, return a mock response
-        subscriptions = [
-            {
-                "id": "sub_mock_123",
-                "customer_id": customer_id,
-                "plan_id": "standard",
-                "status": "active"
-            }
-        ]
-        
-        return subscriptions
-        
-    except Exception as e:
-        logger.error(f"Failed to get customer subscriptions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def get_customer_subscriptions(customer_id: str):
+    """Get all subscriptions for a customer from baselayer"""
+    client = BaselayerClient()
+    result = await client.list_customer_subscriptions(customer_id)
+    return _result_or_error(result)

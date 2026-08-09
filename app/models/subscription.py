@@ -92,6 +92,7 @@ class Subscription(Base):
     # Relationships
     customer = relationship("Customer", back_populates="subscriptions")
     plan = relationship("SubscriptionPlan", back_populates="subscriptions")
+    invoices = relationship("Invoice", back_populates="subscription")
     
     def __repr__(self):
         return f"<Subscription {self.id} - {self.status}>"

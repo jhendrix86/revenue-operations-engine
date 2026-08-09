@@ -1,16 +1,21 @@
 """
 Payment router
+
+Calls baselayer's real income_engine payment provider manager rather than
+Stripe/PayPal directly or a local mock. baselayer has no separate
+"payment intent" concept (Stripe's two-step create-then-confirm flow) - it
+processes payments in one call - so create_payment_intent processes the
+payment immediately and confirm_payment simply re-fetches its current
+status, rather than performing a second real action.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-from datetime import datetime
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from loguru import logger
 
-from app.database import get_db
-from app.models.payment import Payment, PaymentStatus, PaymentMethod
+from app.services.baselayer_client import BaselayerClient
 
 router = APIRouter()
 
@@ -38,108 +43,61 @@ class RefundRequest(BaseModel):
     reason: Optional[str] = None
 
 
+def _result_or_error(result):
+    if result.success:
+        return result.data
+    status_code = 404 if "not found" in (result.error or "").lower() else 400
+    raise HTTPException(status_code=status_code, detail=result.error)
+
+
 @router.post("/create-intent")
-async def create_payment_intent(
-    request: CreatePaymentIntentRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """Create a payment intent"""
-    try:
-        logger.info(f"Creating payment intent for customer {request.customer_id}")
-        
-        # In production, this would integrate with Stripe/PayPal
-        # For now, return a mock response
-        payment_intent = {
-            "id": "pi_mock_123",
-            "amount": int(request.amount * 100),  # Convert to cents
-            "currency": request.currency,
-            "status": "requires_payment_method",
-            "client_secret": "pi_mock_123_secret_xyz",
-            "customer_id": request.customer_id
-        }
-        
-        logger.info(f"Payment intent created: {payment_intent['id']}")
-        return payment_intent
-        
-    except Exception as e:
-        logger.error(f"Failed to create payment intent: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def create_payment_intent(request: CreatePaymentIntentRequest):
+    """Process a payment via baselayer"""
+    logger.info(f"Processing payment for customer {request.customer_id}")
+
+    client = BaselayerClient()
+    result = await client.process_payment(
+        amount=request.amount,
+        currency=request.currency,
+        payment_method_token=request.payment_method_type,
+        customer_id=request.customer_id,
+        metadata={**(request.metadata or {}), "description": request.description},
+    )
+    return _result_or_error(result)
 
 
 @router.post("/confirm")
-async def confirm_payment(
-    request: ConfirmPaymentRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """Confirm a payment"""
-    try:
-        logger.info(f"Confirming payment {request.payment_id}")
-        
-        # In production, this would confirm with Stripe/PayPal
-        # For now, return a mock response
-        payment = {
-            "id": request.payment_id,
-            "status": "succeeded",
-            "amount": 9700,
-            "currency": "USD"
-        }
-        
-        logger.info(f"Payment confirmed: {payment['id']}")
-        return payment
-        
-    except Exception as e:
-        logger.error(f"Failed to confirm payment: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def confirm_payment(request: ConfirmPaymentRequest):
+    """
+    Re-check a payment's status.
+
+    baselayer processes payments in a single call (no separate
+    create-then-confirm step like Stripe's PaymentIntent flow), so this
+    doesn't perform a second action - it reports the real current status of
+    the payment created_payment_intent already processed.
+    """
+    client = BaselayerClient()
+    result = await client.get_payment_status(request.payment_id)
+    return _result_or_error(result)
 
 
 @router.post("/refund")
-async def process_refund(
-    request: RefundRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """Process a refund"""
-    try:
-        logger.info(f"Processing refund for payment {request.payment_id}")
-        
-        # In production, this would process refund with Stripe/PayPal
-        # For now, return a mock response
-        refund = {
-            "id": "re_mock_123",
-            "payment_id": request.payment_id,
-            "amount": request.amount,
-            "status": "succeeded",
-            "reason": request.reason
-        }
-        
-        logger.info(f"Refund processed: {refund['id']}")
-        return refund
-        
-    except Exception as e:
-        logger.error(f"Failed to process refund: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def process_refund(request: RefundRequest):
+    """Process a refund via baselayer"""
+    logger.info(f"Processing refund for payment {request.payment_id}")
+
+    client = BaselayerClient()
+    result = await client.refund_payment(
+        transaction_id=request.payment_id,
+        amount=request.amount,
+        reason=request.reason,
+    )
+    return _result_or_error(result)
 
 
 @router.get("/{payment_id}")
-async def get_payment(
-    payment_id: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Get payment details"""
-    try:
-        logger.info(f"Getting payment details for {payment_id}")
-        
-        # In production, this would query from database
-        # For now, return a mock response
-        payment = {
-            "id": payment_id,
-            "amount": 9700,
-            "currency": "USD",
-            "status": "succeeded",
-            "created_at": datetime.utcnow().isoformat()
-        }
-        
-        return payment
-        
-    except Exception as e:
-        logger.error(f"Failed to get payment: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def get_payment(payment_id: str):
+    """Get payment status from baselayer"""
+    client = BaselayerClient()
+    result = await client.get_payment_status(payment_id)
+    return _result_or_error(result)

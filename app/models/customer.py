@@ -50,7 +50,7 @@ class Customer(Base):
     
     # Relationships
     payments = relationship("Payment", back_populates="customer")
-    payment_methods = relationship("PaymentMethod", back_populates="customer")
+    payment_methods = relationship("CustomerPaymentMethod", back_populates="customer")
     subscriptions = relationship("Subscription", back_populates="customer")
     invoices = relationship("Invoice", back_populates="customer")
     

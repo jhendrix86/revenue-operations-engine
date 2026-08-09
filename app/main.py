@@ -3,15 +3,18 @@ Revenue Operations Engine - Main Application
 Financial backbone for the Autonomous Company OS
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from datetime import datetime
 from loguru import logger
 import os
 
+from unkey_auth import require_api_key
+
 from app.config import settings
 from app.database import init_db
-from app.routers import payments, subscriptions, invoices, analytics, dunning, webhooks
+from app.routers import payments, subscriptions, invoices, analytics, dunning, webhooks, customers
 
 
 @asynccontextmanager
@@ -45,12 +48,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(payments.router, prefix="/payments", tags=["payments"])
-app.include_router(subscriptions.router, prefix="/subscriptions", tags=["subscriptions"])
-app.include_router(invoices.router, prefix="/invoices", tags=["invoices"])
-app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
-app.include_router(dunning.router, prefix="/dunning", tags=["dunning"])
+# Include routers - gated by Unkey key verification (fails open until
+# UNKEY_ROOT_KEY is configured; see unkey-auth/README.md). webhooks is
+# deliberately excluded: inbound calls from Stripe/PayPal are verified by
+# provider signature, not our own API keys.
+_auth = [Depends(require_api_key)]
+app.include_router(customers.router, prefix="/customers", tags=["customers"], dependencies=_auth)
+app.include_router(payments.router, prefix="/payments", tags=["payments"], dependencies=_auth)
+app.include_router(subscriptions.router, prefix="/subscriptions", tags=["subscriptions"], dependencies=_auth)
+app.include_router(invoices.router, prefix="/invoices", tags=["invoices"], dependencies=_auth)
+app.include_router(analytics.router, prefix="/analytics", tags=["analytics"], dependencies=_auth)
+app.include_router(dunning.router, prefix="/dunning", tags=["dunning"], dependencies=_auth)
 app.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
 
 
@@ -63,6 +71,7 @@ async def root():
         "status": "operational",
         "description": "Financial backbone for the Autonomous Company OS",
         "endpoints": {
+            "customers": "/customers",
             "payments": "/payments",
             "subscriptions": "/subscriptions",
             "invoices": "/invoices",
@@ -76,10 +85,11 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    logger.info("Health check performed")
     return {
         "status": "healthy",
         "service": "revenue-operations-engine",
-        "timestamp": logger.info("Health check performed")
+        "timestamp": datetime.utcnow().isoformat()
     }
 
 
