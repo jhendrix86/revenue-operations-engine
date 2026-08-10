@@ -10,6 +10,7 @@ import uuid
 import enum
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
 class PaymentStatus(str, enum.Enum):
@@ -30,7 +31,7 @@ class PaymentMethod(str, enum.Enum):
     STRIPE = "stripe"
 
 
-class Payment(Base):
+class Payment(TenantBase, Base):
     """Payment model"""
     __tablename__ = "payments"
     
@@ -61,7 +62,7 @@ class Payment(Base):
         return f"<Payment {self.id} - {self.status} - {self.amount} {self.currency}>"
 
 
-class CustomerPaymentMethod(Base):
+class CustomerPaymentMethod(TenantBase, Base):
     """Customer payment method model"""
     __tablename__ = "payment_methods"
     

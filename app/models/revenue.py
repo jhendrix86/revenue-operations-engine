@@ -10,6 +10,7 @@ import uuid
 import enum
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
 class RevenueType(str, enum.Enum):
@@ -20,7 +21,7 @@ class RevenueType(str, enum.Enum):
     ADJUSTMENT = "adjustment"
 
 
-class RevenueRecord(Base):
+class RevenueRecord(TenantBase, Base):
     """Revenue record model"""
     __tablename__ = "revenue_records"
     
@@ -57,7 +58,7 @@ class RevenueRecord(Base):
         return f"<RevenueRecord {self.id} - {self.revenue_type} - {self.amount} {self.currency}>"
 
 
-class RevenueRecognition(Base):
+class RevenueRecognition(TenantBase, Base):
     """Revenue recognition schedule model"""
     __tablename__ = "revenue_recognition"
     

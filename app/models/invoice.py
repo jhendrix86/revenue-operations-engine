@@ -10,6 +10,7 @@ import uuid
 import enum
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
 class InvoiceStatus(str, enum.Enum):
@@ -21,7 +22,7 @@ class InvoiceStatus(str, enum.Enum):
     UNCOLLECTIBLE = "uncollectible"
 
 
-class Invoice(Base):
+class Invoice(TenantBase, Base):
     """Invoice model"""
     __tablename__ = "invoices"
     
@@ -74,7 +75,7 @@ class Invoice(Base):
         return f"<Invoice {self.invoice_number} - {self.status} - {self.total} {self.currency}>"
 
 
-class InvoiceItem(Base):
+class InvoiceItem(TenantBase, Base):
     """Invoice item model"""
     __tablename__ = "invoice_items"
     

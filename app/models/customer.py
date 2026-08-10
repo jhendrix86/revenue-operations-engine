@@ -9,9 +9,10 @@ from datetime import datetime
 import uuid
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
-class Customer(Base):
+class Customer(TenantBase, Base):
     """Customer model"""
     __tablename__ = "customers"
     

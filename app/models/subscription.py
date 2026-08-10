@@ -10,6 +10,7 @@ import uuid
 import enum
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
 class SubscriptionStatus(str, enum.Enum):
@@ -21,7 +22,7 @@ class SubscriptionStatus(str, enum.Enum):
     UNPAID = "unpaid"
 
 
-class SubscriptionPlan(Base):
+class SubscriptionPlan(TenantBase, Base):
     """Subscription plan model"""
     __tablename__ = "subscription_plans"
     
@@ -54,7 +55,7 @@ class SubscriptionPlan(Base):
         return f"<SubscriptionPlan {self.name} - {self.price} {self.currency}/{self.billing_interval}>"
 
 
-class Subscription(Base):
+class Subscription(TenantBase, Base):
     """Subscription model"""
     __tablename__ = "subscriptions"
     
