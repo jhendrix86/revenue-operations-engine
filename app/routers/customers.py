@@ -16,6 +16,7 @@ from loguru import logger
 
 from app.database import get_db
 from app.models.customer import Customer
+from app.models.tenant_base import apply_tenant_context
 from app.utils.serializers import model_to_dict
 
 router = APIRouter()
@@ -48,6 +49,7 @@ async def create_customer(
             phone=request.phone,
             country=request.country,
         )
+        apply_tenant_context(customer)
         db.add(customer)
         await db.commit()
         await db.refresh(customer)

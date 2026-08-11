@@ -3,7 +3,7 @@ Database models for Revenue Operations Engine
 """
 
 from .tenant import Tenant
-from .tenant_base import TenantBase
+from .tenant_base import TenantBase, apply_tenant_context
 from .payment import Payment, PaymentStatus, PaymentMethod, CustomerPaymentMethod
 from .subscription import Subscription, SubscriptionPlan
 from .invoice import Invoice, InvoiceItem
@@ -13,6 +13,7 @@ from .revenue import RevenueRecord, RevenueRecognition
 __all__ = [
     'Tenant',
     'TenantBase',
+    'apply_tenant_context',
     'Payment',
     'PaymentStatus',
     'PaymentMethod',
