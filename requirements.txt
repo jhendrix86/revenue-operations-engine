@@ -35,9 +35,6 @@ python-multipart==0.0.6
 python-dateutil==2.8.2
 pytz==2023.3
 
-# Tax Calculation
-taxjar==4.0.0
-
 # PDF Generation
 reportlab==4.0.7
 weasyprint==60.1
