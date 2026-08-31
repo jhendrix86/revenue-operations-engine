@@ -24,6 +24,7 @@ pydantic-settings==2.1.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 -e ../unkey-auth
+-e ../empire-operators
 
 # Webhook Handling
 cryptography==41.0.7

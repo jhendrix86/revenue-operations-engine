@@ -16,6 +16,7 @@ from app.config import settings
 from app.database import init_db
 from app.routers import payments, subscriptions, invoices, analytics, dunning, webhooks, customers
 from app.middleware.tenant import tenant_middleware
+from empire_operators.middleware import SafetyBoundaryMiddleware
 
 
 @asynccontextmanager
@@ -57,6 +58,14 @@ app.add_middleware(
 
 # Add tenant middleware for multi-tenancy support
 app.middleware("http")(tenant_middleware)
+
+# Reject request bodies matching known-unsafe patterns (prompt injection,
+# `drop table`, `<script>`) before they reach a router. empire_os
+# SafetyBoundaryOperator via the empire-operators sibling — Step 8 Phase B
+# rollout, see EMPIRE_OS_INTEGRATION_ANALYSIS.md + SECURITY_REVIEW.md.
+# Note: also scans the unauthenticated /webhooks bodies (Stripe event
+# JSON) — the unsafe patterns don't occur in legitimate webhook payloads.
+app.add_middleware(SafetyBoundaryMiddleware)
 
 # Include routers - gated by Unkey key verification (fails open until
 # UNKEY_ROOT_KEY is configured; see unkey-auth/README.md). webhooks is
