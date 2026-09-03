@@ -14,6 +14,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,4 +46,12 @@ jobs:
 
       - name: Run tests
         working-directory: repo
-        run: pytest -q
+        # Redirect to a file, not the pipe: the app leaves a non-daemon
+        # background thread / undisposed async engine alive after the test
+        # session, which holds the step's stdout pipe open in CI and hangs
+        # the step until the job cap. A file fd doesn't block step exit.
+        run: |
+          pip install pytest-timeout
+          pytest -q --timeout=120 --timeout-method=thread > pytest.out 2>&1; rc=$?
+          cat pytest.out
+          exit $rc

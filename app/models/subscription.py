@@ -3,7 +3,7 @@ Subscription models
 """
 
 from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Enum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -26,7 +26,7 @@ class SubscriptionPlan(TenantBase, Base):
     """Subscription plan model"""
     __tablename__ = "subscription_plans"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False, unique=True)
     description = Column(String(500), nullable=True)
     
@@ -59,9 +59,9 @@ class Subscription(TenantBase, Base):
     """Subscription model"""
     __tablename__ = "subscriptions"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
-    plan_id = Column(UUID(as_uuid=True), ForeignKey("subscription_plans.id"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(Uuid(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    plan_id = Column(Uuid(as_uuid=True), ForeignKey("subscription_plans.id"), nullable=False)
     
     # Status
     status = Column(Enum(SubscriptionStatus), default=SubscriptionStatus.TRIALING)

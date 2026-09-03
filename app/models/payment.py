@@ -3,7 +3,7 @@ Payment models
 """
 
 from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Enum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -35,8 +35,8 @@ class Payment(TenantBase, Base):
     """Payment model"""
     __tablename__ = "payments"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(Uuid(as_uuid=True), ForeignKey("customers.id"), nullable=False)
     amount = Column(Float, nullable=False)
     currency = Column(String(3), nullable=False, default="USD")
     status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
@@ -66,8 +66,8 @@ class CustomerPaymentMethod(TenantBase, Base):
     """Customer payment method model"""
     __tablename__ = "payment_methods"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(Uuid(as_uuid=True), ForeignKey("customers.id"), nullable=False)
     type = Column(Enum(PaymentMethod), nullable=False)
     
     # Card details (encrypted)

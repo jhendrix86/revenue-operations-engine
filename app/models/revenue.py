@@ -3,7 +3,7 @@ Revenue recognition models
 """
 
 from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Enum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -25,11 +25,11 @@ class RevenueRecord(TenantBase, Base):
     """Revenue record model"""
     __tablename__ = "revenue_records"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
-    subscription_id = Column(UUID(as_uuid=True), ForeignKey("subscriptions.id"), nullable=True)
-    payment_id = Column(UUID(as_uuid=True), ForeignKey("payments.id"), nullable=True)
-    invoice_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id"), nullable=True)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(Uuid(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    subscription_id = Column(Uuid(as_uuid=True), ForeignKey("subscriptions.id"), nullable=True)
+    payment_id = Column(Uuid(as_uuid=True), ForeignKey("payments.id"), nullable=True)
+    invoice_id = Column(Uuid(as_uuid=True), ForeignKey("invoices.id"), nullable=True)
     
     # Revenue details
     revenue_type = Column(Enum(RevenueType), nullable=False)
@@ -62,8 +62,8 @@ class RevenueRecognition(TenantBase, Base):
     """Revenue recognition schedule model"""
     __tablename__ = "revenue_recognition"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    revenue_record_id = Column(UUID(as_uuid=True), ForeignKey("revenue_records.id"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    revenue_record_id = Column(Uuid(as_uuid=True), ForeignKey("revenue_records.id"), nullable=False)
     
     # Recognition details
     amount = Column(Float, nullable=False)

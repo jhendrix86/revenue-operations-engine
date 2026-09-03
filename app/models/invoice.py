@@ -3,7 +3,7 @@ Invoice models
 """
 
 from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Enum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -26,9 +26,9 @@ class Invoice(TenantBase, Base):
     """Invoice model"""
     __tablename__ = "invoices"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
-    subscription_id = Column(UUID(as_uuid=True), ForeignKey("subscriptions.id"), nullable=True)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(Uuid(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    subscription_id = Column(Uuid(as_uuid=True), ForeignKey("subscriptions.id"), nullable=True)
     
     # Invoice details
     invoice_number = Column(String(50), unique=True, nullable=False)
@@ -45,7 +45,7 @@ class Invoice(TenantBase, Base):
     
     # Payment
     paid_at = Column(DateTime, nullable=True)
-    payment_id = Column(UUID(as_uuid=True), ForeignKey("payments.id"), nullable=True)
+    payment_id = Column(Uuid(as_uuid=True), ForeignKey("payments.id"), nullable=True)
     
     # Gateway IDs
     stripe_invoice_id = Column(String, unique=True, nullable=True)
@@ -79,8 +79,8 @@ class InvoiceItem(TenantBase, Base):
     """Invoice item model"""
     __tablename__ = "invoice_items"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    invoice_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    invoice_id = Column(Uuid(as_uuid=True), ForeignKey("invoices.id"), nullable=False)
     
     # Item details
     description = Column(String(500), nullable=False)
