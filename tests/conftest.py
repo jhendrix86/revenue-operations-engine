@@ -36,6 +36,22 @@ from unkey_auth.client import UnkeyClient  # noqa: E402
 from unkey_auth.config import Config  # noqa: E402
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _dispose_async_engine():
+    """Dispose the session sqlite+aiosqlite engine at teardown.
+
+    aiosqlite runs each connection on a NON-daemon worker thread that only
+    stops on engine.dispose(). Without this the thread outlives the test
+    session, the interpreter can't reach shutdown, and `pytest` never
+    exits - in CI the step then hangs until the job timeout even though
+    every test passed. (content-engine 0abc157 precedent.)
+    """
+    yield
+    import asyncio
+
+    asyncio.run(database_module.engine.dispose())
+
+
 @pytest.fixture(autouse=True)
 def _unkey_fail_open_by_default(monkeypatch):
     """
